@@ -44,6 +44,7 @@ treasury.index=treasury['DATE']
 data=pd.read_stata('../working/analysis.dta')
 data['TRADE_TIME']=pd.to_datetime(data['TRADE_YEAR'].apply(lambda x: str(int(x))) +data['TRADE_MONTH'].apply(lambda x: str(int(x))) , format='%Y%m')
 #difference between trade time
+date=data[data['MATURITY_DATE'].isna()==False]
 data['TO_MATURITY']=((data['MATURITY_DATE']-data['TRADE_TIME'])/np.timedelta64(1,'M')).astype(int)
 #loop to get match yield of treasury
 data['TREASURY']=0
