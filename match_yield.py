@@ -40,7 +40,7 @@ for idx in np.arange(treasury.shape[0]):
 treasury.index=treasury['DATE']
 
 
-chunksize=1000
+chunksize=10000
 data=pd.read_stata('../working/analysis.dta',chunksize=chunksize)
 for chunk in data:
     chunk['TRADE_TIME'] = pd.to_datetime(
