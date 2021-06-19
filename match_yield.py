@@ -40,21 +40,44 @@ for idx in np.arange(treasury.shape[0]):
 treasury.index=treasury['DATE']
 
 
+chunksize=1000
+data=pd.read_stata('../working/analysis.dta',chunksize=chunksize)
+for chunk in data:
+    chunk['TRADE_TIME'] = pd.to_datetime(
+        chunk['TRADE_YEAR'].apply(lambda x: str(int(x))) + chunk['TRADE_MONTH'].apply(lambda x: str(int(x))),
+        format='%Y%m')
+    # difference between trade time
+    date = chunk[chunk['MATURITY_DATE'].isna() == False]
+    chunk['TO_MATURITY'] = ((chunk['MATURITY_DATE'] - chunk['TRADE_TIME']) / np.timedelta64(1, 'M')).fillna(999).astype(
+        int)
+    # loop to get match yield of treasury
+    chunk['TREASURY'] = 0
+    for idx in np.arange(chunk.index[0],chunk.index[0]+chunk.shape[0]):
+        if (idx / 100.0 == idx // 100):
+            print(idx)
+        if ((chunk.loc[idx, 'TO_MATURITY'] >= 1) and (chunk.loc[idx, 'TO_MATURITY'] <= 360)):
+            chunk.loc[idx, 'TREASURY'] = \
+            treasury.iloc[treasury.index.get_loc(chunk['TRADE_TIME'][idx], method='nearest')]['interpolate'](
+                chunk.loc[idx, 'TO_MATURITY'])
+        else:
+            chunk.loc[idx, 'TREASURY'] = 999
+    chunk.to_stata('../working/analysis_yield'+str(chunk.index[0]//chunksize)+'.dta')
 
-data=pd.read_stata('../working/analysis.dta')
-data['TRADE_TIME']=pd.to_datetime(data['TRADE_YEAR'].apply(lambda x: str(int(x))) +data['TRADE_MONTH'].apply(lambda x: str(int(x))) , format='%Y%m')
-#difference between trade time
-date=data[data['MATURITY_DATE'].isna()==False]
-data['TO_MATURITY']=((data['MATURITY_DATE']-data['TRADE_TIME'])/np.timedelta64(1,'M')).fillna(999).astype(int)
-#loop to get match yield of treasury
-data['TREASURY']=0
-for idx in np.arange(data.shape[0]):
-    if (idx/100.0==idx//100):
-        print(idx)
-    if ((data.loc[idx,'TO_MATURITY']>=1) and (data.loc[idx,'TO_MATURITY']<=360)):
-        data.loc[idx,'TREASURY']=treasury.iloc[treasury.index.get_loc(data['TRADE_TIME'][idx],method='nearest')]['interpolate'](data.loc[idx,'TO_MATURITY'])
-    else:
-        data.loc[idx,'TREASURY']=999
 
-data.to_stata('../working/analysis_yield.dta')
+
+# data=pd.read_stata('../working/analysis.dta')
+# data['TRADE_TIME']=pd.to_datetime(data['TRADE_YEAR'].apply(lambda x: str(int(x))) +data['TRADE_MONTH'].apply(lambda x: str(int(x))) , format='%Y%m')
+# #difference between trade time
+# date=data[data['MATURITY_DATE'].isna()==False]
+# data['TO_MATURITY']=((data['MATURITY_DATE']-data['TRADE_TIME'])/np.timedelta64(1,'M')).fillna(999).astype(int)
+# #loop to get match yield of treasury
+# data['TREASURY']=0
+# for idx in np.arange(data.shape[0]):
+#     if (idx/100.0==idx//100):
+#         print(idx)
+#     if ((data.loc[idx,'TO_MATURITY']>=1) and (data.loc[idx,'TO_MATURITY']<=360)):
+#         data.loc[idx,'TREASURY']=treasury.iloc[treasury.index.get_loc(data['TRADE_TIME'][idx],method='nearest')]['interpolate'](data.loc[idx,'TO_MATURITY'])
+#     else:
+#         data.loc[idx,'TREASURY']=999
+# data.to_stata('../working/analysis_yield.dta')
 print('hehe')
